@@ -1,15 +1,14 @@
-
+#include <math.h>
 #include "FileZ.h"
 #include "CommonZ.h"
 #include "model.h"
 #include "readbmp.h"
-#include "windows.h"
-#include "direct.h"
 #include "time.h"
 #include "stdio.h"
 #include <iostream>
 
 using namespace std;
+
 GLint window_size = 200;
 
 GLMmodel *model;
@@ -41,7 +40,7 @@ void setseed_and_style(string filename)
 	file = fopen(filename.data(), "r");
 	if (!file)
 	{
-		fprintf(stderr, "setseed failed: can't open file \"%s\".\n", filename);
+		fprintf(stderr, "setseed failed: can't open file \"%s\".\n", filename.c_str());
 		system("PAUSE");
 		exit(1);
 	}
@@ -72,12 +71,12 @@ void setseed_and_style(string filename)
 
 	while (getline(stylefile, imagename))
 	{
-		int pos = imagename.find('_', 0);
+		int pos = (int)imagename.find('_', 0);
 		string s_m_index = imagename.substr(0, pos);
 		int m_index = atoi(s_m_index.data()) - 1;
 		if (m_index == model_current)
 		{
-			int pos2 = imagename.find('.', 0);
+			int pos2 = (int)imagename.find('.', 0);
 			string s_s_index = imagename.substr(pos + 1, pos2 - pos - 1);
 			int s_index = atoi(s_s_index.data()) - 1;
 			model->isstyle[s_index] = true;
@@ -122,19 +121,19 @@ void isincube()
 	}
 }
 
-BOOL WriteBitmapFile(const char * filename, int width, int height, unsigned char * bitmapData)
+bool WriteBitmapFile(const char * filename, int width, int height, unsigned char * bitmapData)
 {
 	//野割BITMAPFILEHEADER
-	BITMAPFILEHEADER bitmapFileHeader;
-	memset(&bitmapFileHeader, 0, sizeof(BITMAPFILEHEADER));
-	bitmapFileHeader.bfSize = sizeof(BITMAPFILEHEADER);
+	myBITMAPFILEHEADER bitmapFileHeader;
+	memset(&bitmapFileHeader, 0, sizeof(myBITMAPFILEHEADER));
+	bitmapFileHeader.bfSize = sizeof(myBITMAPFILEHEADER)+ sizeof(myBITMAPINFOHEADER) + sizeof(bitmapData);
 	bitmapFileHeader.bfType = 0x4d42;	//BM
-	bitmapFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+	bitmapFileHeader.bfOffBits = sizeof(myBITMAPFILEHEADER) + sizeof(myBITMAPINFOHEADER);
 
 	//野割BITMAPINFOHEADER
-	BITMAPINFOHEADER bitmapInfoHeader;
-	memset(&bitmapInfoHeader, 0, sizeof(BITMAPINFOHEADER));
-	bitmapInfoHeader.biSize = sizeof(BITMAPINFOHEADER);
+	myBITMAPINFOHEADER bitmapInfoHeader;
+	memset(&bitmapInfoHeader, 0, sizeof(myBITMAPINFOHEADER));
+	bitmapInfoHeader.biSize = sizeof(myBITMAPINFOHEADER);
 	bitmapInfoHeader.biWidth = width;
 	bitmapInfoHeader.biHeight = height;
 	bitmapInfoHeader.biPlanes = 1;
@@ -158,17 +157,17 @@ BOOL WriteBitmapFile(const char * filename, int width, int height, unsigned char
 	filePtr = fopen(filename, "wb");
 	if (NULL == filePtr)
 	{
-		return FALSE;
+		return false;
 	}
 
-	fwrite(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
+	fwrite(&bitmapFileHeader, sizeof(myBITMAPFILEHEADER), 1, filePtr);
 
-	fwrite(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER), 1, filePtr);
+	fwrite(&bitmapInfoHeader, sizeof(myBITMAPINFOHEADER), 1, filePtr);
 
 	fwrite(bitmapData, bitmapInfoHeader.biSizeImage, 1, filePtr);
 
 	fclose(filePtr);
-	return TRUE;
+	return true;
 }
 
 void saveScreenShot(int clnHeight, int clnWidth, GLfloat angle)
@@ -184,7 +183,7 @@ void saveScreenShot(int clnHeight, int clnWidth, GLfloat angle)
 	int view_current = angle / 30 + 1;
 
 	string
-		filename2 = back_projection_path + "\\" +
+		filename2 = back_projection_path + "/" +
 		std::to_string(model_current + 1) + "_" +
 		std::to_string(model->seed_current + 1) + "_" +
 		std::to_string(view_current) + ".bmp";
@@ -207,6 +206,7 @@ void initialize(string params)
 	if (ifs.fail())
 	{
 		cout << "can't open parameters file" << endl;
+        exit(0);
 	}
 	string tmp;
 	ifs >> tmp >> models_path
@@ -295,13 +295,14 @@ void render()
 {
 	
 	cout << "render" << endl;
+    //cout << fz.files.size() << endl;
 	for (int k = 0; k < fz.files.size(); k++)
 	{
 		start = clock();
 		model = glmReadOBJ(const_cast<char *>(fz.files[model_current].path.c_str()));
-		int pos = fz.files[model_current].path.find_last_of('\\');
+		int pos = fz.files[model_current].path.find_last_of('/');
 		int length = fz.files[model_current].path.length();
-		string seed_filename = seed_path + "\\" + fz.files[model_current].path.substr(pos + 1, length - 5 - pos) + ".off";
+		string seed_filename = seed_path + "/" + fz.files[model_current].path.substr(pos + 1, length - 5 - pos) + ".off";
 		setseed_and_style(seed_filename);
 		isincube();
 		for (int i = 0; i < 30; i++)

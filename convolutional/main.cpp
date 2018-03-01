@@ -1,11 +1,10 @@
 /* use kernel to convolute the bounding box of all images*/
 
-#include <direct.h>
-#include<iostream>
+#include <dirent.h>
+#include <iostream>
 #include <time.h>
 #include <fstream>
-#include<omp.h>
-#include<vector>
+#include <vector>
 #include <opencv2/opencv.hpp>
 #include <math.h>
 using namespace cv;
@@ -22,59 +21,61 @@ IplImage* jiabian(IplImage* image, int zd)
 {
 	//Mat img = imread(*filename);
 	//IplImage* image = cvLoadImage( filename->c_str(), 0 ); 
-	
-	int flag=0;	
-	Mat img(image,0);
-	Mat imgtemp; 
+    //cout << "debug 2" << endl;
+    Mat img = cv::cvarrToMat(image);
+
 	int rows = img.rows;
 	int cols = img.cols;
-	
-
-	if(image->nChannels==1){
-
-		if (rows < zd)
-		{
-			copyMakeBorder(img, imgtemp, 0, zd - rows, 0, 0, BORDER_CONSTANT, Scalar(255));
-			CvSize imgsize=cvSize(imgtemp.cols,imgtemp.rows);
-			IplImage* imgtemp_1=cvCreateImage(imgsize, image->depth, image->nChannels); 
-			cvCopy(&IplImage(imgtemp),imgtemp_1);
-			cvReleaseImage(&image);
-			return  imgtemp_1;
-		}
-		if (cols < zd)
-		{
-			copyMakeBorder(img, imgtemp, 0, 0, 0, zd-cols, BORDER_CONSTANT, Scalar(255));
-			CvSize imgsize=cvSize(imgtemp.cols,imgtemp.rows);
-			IplImage* imgtemp_1=cvCreateImage(imgsize, image->depth, image->nChannels); 
-			cvCopy(&IplImage(imgtemp),imgtemp_1);
-			cvReleaseImage(&image);
-			return  imgtemp_1;
-		}
-	}
-	else{
-		if (rows < zd)
-		{
-			copyMakeBorder(img, imgtemp, 0, zd - rows, 0, 0, BORDER_CONSTANT, Scalar(255,255,255));
-			CvSize imgsize=cvSize(imgtemp.cols,imgtemp.rows);
-			IplImage* imgtemp_1=cvCreateImage(imgsize, image->depth, image->nChannels); 
-			cvCopy(&IplImage(imgtemp),imgtemp_1);
-			cvReleaseImage(&image);
-			return  imgtemp_1;
-		}
-		if (cols < zd)
-		{
-			copyMakeBorder(img, imgtemp, 0, 0, 0, zd-cols, BORDER_CONSTANT,  Scalar(255,255,255));
-			CvSize imgsize=cvSize(imgtemp.cols,imgtemp.rows);
-			IplImage* imgtemp_1=cvCreateImage(imgsize, image->depth, image->nChannels); 
-			cvCopy(&IplImage(imgtemp),imgtemp_1);
-			cvReleaseImage(&image);
-			return  imgtemp_1;
-		}
-
-	}
-
-	return image;
+    //cout << image->nChannels << endl;
+    //cout << "degub 3" << endl;
     
+	if(image->nChannels == 1){
+        //cout << "degub 8" << endl;
+		if (rows < zd)
+		{
+            //cout << "degub 6" << endl;
+            Mat imgtemp;
+			copyMakeBorder(img, imgtemp, 0, zd - rows, 0, 0, BORDER_CONSTANT, Scalar(255));
+			//CvSize imgsize=cvSize(imgtemp.cols,imgtemp.rows);
+			//IplImage* imgtemp_1=cvCreateImage(imgsize, image->depth, image->nChannels);
+            IplImage* img_border = new IplImage(imgtemp);
+			//cvCopy(img_border,imgtemp_1);
+			cvReleaseImage(&image);
+			//return  imgtemp_1;
+            return img_border;
+		}
+		if (cols < zd)
+		{
+            //cout << "degub 7" << endl;
+            Mat imgtemp;
+			copyMakeBorder(img, imgtemp, 0, 0, 0, zd-cols, BORDER_CONSTANT, Scalar(255));
+			IplImage* img_border = new IplImage(imgtemp);
+			cvReleaseImage(&image);
+			return img_border;
+		}
+	}else{
+        //cout << "degub 9" << endl;
+		if (rows < zd)
+		{
+            //cout << "degub 4" << endl;
+            Mat imgtemp;
+			copyMakeBorder(img, imgtemp, 0, zd - rows, 0, 0, BORDER_CONSTANT, Scalar(255,255,255));
+            IplImage* img_border = new IplImage(imgtemp);
+            cvReleaseImage(&image);
+            return img_border;
+		}
+		if (cols < zd)
+		{
+            //cout << "degub 5" << endl;
+            Mat imgtemp;
+			copyMakeBorder(img, imgtemp, 0, 0, 0, zd-cols, BORDER_CONSTANT,  Scalar(255,255,255));
+            IplImage* img_border = new IplImage(imgtemp);
+            cvReleaseImage(&image);
+            return img_border;
+		}
+	}
+    //cout << " debug 1" <<endl;
+	return image;
 }
 	
 
@@ -103,13 +104,13 @@ int CL(const char *filename){
 typedef vector<float>* Vrq;
 int level_main(int clan,string *curpath){
 
-	string imagePath = *curpath + "\\3dlines\\";
+	string imagePath = *curpath + "/3dlines/";
 
-	string imagenameFile = *curpath + "\\imagesname\\picname";
-	imagenameFile=imagenameFile+std::to_string(long double(clan))+".txt";
+	string imagenameFile = *curpath + "/imagesname/picname";
+	imagenameFile=imagenameFile+std::to_string(clan)+".txt";
 	int imagenum = CL(imagenameFile.c_str());
 
-	string patchPath = *curpath+"\\kernel\\"+std::to_string((long double)clan)+"\\";
+	string patchPath = *curpath+"/kernel/"+std::to_string(clan)+"/";
 	string patchnameFile=patchPath+"Apidfpatchname.txt";
 	int patchnum=CL(patchnameFile.c_str());
 
@@ -130,18 +131,24 @@ int level_main(int clan,string *curpath){
 	finimagename.close();
 	
 	
-	for(int i=0;i<imagenum;i++){	
+	for(int i=0;i<imagenum;i++){
 
 		clock_t t1 = clock();
 
-		string imagefile=imagePath+allimagename[i];		
-		IplImage* image_original = cvLoadImage( imagefile.c_str(), 0 ); 
+		string imagefile=imagePath+allimagename[i].substr(0,allimagename[i].length()-1);
+        
+		IplImage* image_original = cvLoadImage( imagefile.c_str(), 0);
+        //Mat image_original_mat = imread(imagefile, CV_LOAD_IMAGE_UNCHANGED);
+        //IplImage* image_original = new IplImage(image_original_mat);
 		cout<<imagefile<<endl;
+        
         //calculate hog for all areas
 		
 		CvSize image_patch= cvSize(size_hog,size_hog);
+    
 		IplImage* image = jiabian(image_original, size_hog);
-
+        //IplImage* image = image_original;
+        
 		int rows=image->height-size_hog+1;
 		int cols=image->width-size_hog+1;
 
@@ -150,8 +157,9 @@ int level_main(int clan,string *curpath){
 		for(int irows=0;irows<rows;irows++){
 			VM[irows]=new Vrq[cols];
 		}
-		
+        cout << "calculate region hog for image "<<endl;
 		IplImage* imagetemp = cvCreateImage(image_patch,image->depth,image->nChannels);
+        cout << rows << " " << cols << endl;
 		for (int m = 0; m < rows; m+=step)
 		{
 			for (int n = 0; n < cols; n+=step)
@@ -159,9 +167,10 @@ int level_main(int clan,string *curpath){
 				cvSetImageROI(image,cvRect(n,m,image_patch.width, image_patch.height));
 				cvCopy(image,imagetemp);
 				cvResetImageROI(image);
-					
-				vector<float>*czimagetempHOG = new vector<float>;				  
-				desc->compute(imagetemp,*czimagetempHOG);
+                //cout << " debug 1 "<< endl;
+                Mat M_patch = cv::cvarrToMat(imagetemp);
+				Vrq czimagetempHOG = new vector<float>;
+				desc->compute(M_patch, *czimagetempHOG);
 				VM[m][n]=czimagetempHOG;
 
 			}
@@ -178,11 +187,12 @@ int level_main(int clan,string *curpath){
 
 			string patchname;
 			getline(finpatchname,patchname);
-			string patchfile=patchPath+patchname;		    
+			string patchfile=patchPath+patchname.substr(0,patchname.length()-1);
+            //cout << patchfile << endl;
 			IplImage* patch = cvLoadImage( patchfile.c_str(), 0 );
-
+            Mat M_patch = cv::cvarrToMat(patch);
 			vector<float>czpathHOG;
-			desc->compute(patch,czpathHOG);
+			desc->compute(M_patch,czpathHOG);
 
 			float **ConV=new float*[rows];
 			for(int k=0;k<rows;k++)
@@ -259,14 +269,15 @@ int level_main(int clan,string *curpath){
 
 			delete []VM[iirows];
 		}
+        /*
 		if(step==2)
 		{
 			for(int iirows=1;iirows<rows;iirows+=step)
 			{
 				delete []VM[iirows];
 			}
-		}
-		delete VM;
+		}*/
+		delete []VM;
 
 		clock_t t2 = clock();
 		std::cout<<"time: "<<t2-t1<<std::endl;
@@ -292,6 +303,7 @@ void initialize(string params)
 	if (ifs.fail())
 	{
 		cout << "can't open parameters file" << endl;
+        exit(0);
 	}
 	string tmp;
 	ifs >> tmp >> curpath
@@ -301,11 +313,12 @@ void initialize(string params)
 	ifs.close();
 }
 
-void main(int argv, char* args[]){
+int main(int argv, char* args[]){
 	
 	initialize("params.cfg");
 
 	for (int i = view_begin; i <= view_end; i++)
 		level_main(i,&curpath);
+    return 0;
 }
 

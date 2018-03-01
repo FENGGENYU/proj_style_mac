@@ -1,12 +1,13 @@
+#include <math.h>
 #include "FileZ.h"
 #include "CommonZ.h"
 #include "model.h"
 #include "readbmp.h"
-#include "windows.h"
-#include "direct.h"
 #include "time.h"
 #include "stdio.h"
 #include <iostream>
+#include <unistd.h>
+#include <sys/stat.h>
 #include <opencv2/opencv.hpp>
 using namespace cv;
 using namespace std;
@@ -45,7 +46,7 @@ void read_seed(string filename)
 	file = fopen(filename.data(), "r");
 	if (!file)
 	{
-		fprintf(stderr, "setseed failed: can't open file \"%s\".\n", filename);
+		fprintf(stderr, "setseed failed: can't open file \"%s\".\n", filename.c_str());
 		system("PAUSE");
 		exit(1);
 	}
@@ -142,11 +143,12 @@ void setSeeds()
 
 
 	}
-
+    cout << "Set seed done" << endl;
 }
 
 void writeSeeds(string seed_filename)
 {
+    cout<< "write seed"<<endl;
 	ofstream ofile;
 	ofile.open(seed_filename, ios::out);
 	if (ofile.fail())
@@ -172,57 +174,58 @@ void del()
 	delete[] model;
 }
 
-BOOL WriteBitmapFile(const char * filename, int width, int height, unsigned char * bitmapData)
+bool WriteBitmapFile(const char * filename, int width, int height, unsigned char * bitmapData)
 {
-	//填充BITMAPFILEHEADER
-	BITMAPFILEHEADER bitmapFileHeader;
-	memset(&bitmapFileHeader, 0, sizeof(BITMAPFILEHEADER));
-	bitmapFileHeader.bfSize = sizeof(BITMAPFILEHEADER);
-	bitmapFileHeader.bfType = 0x4d42;	//BM
-	bitmapFileHeader.bfOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
-
-	//填充BITMAPINFOHEADER
-	BITMAPINFOHEADER bitmapInfoHeader;
-	memset(&bitmapInfoHeader, 0, sizeof(BITMAPINFOHEADER));
-	bitmapInfoHeader.biSize = sizeof(BITMAPINFOHEADER);
-	bitmapInfoHeader.biWidth = width;
-	bitmapInfoHeader.biHeight = height;
-	bitmapInfoHeader.biPlanes = 1;
-	bitmapInfoHeader.biBitCount = 24;
-	bitmapInfoHeader.biCompression = BI_RGB;
-	bitmapInfoHeader.biSizeImage = width * abs(height) * 3;
-
-	//////////////////////////////////////////////////////////////////////////
-	FILE * filePtr;			//连接要保存的bitmap文件用
-	unsigned char tempRGB;	//临时色素
-	int imageIdx;
-
-	//交换R、B的像素位置,bitmap的文件放置的是BGR,内存的是RGB
-	for (imageIdx = 0; imageIdx < bitmapInfoHeader.biSizeImage; imageIdx += 3)
-	{
-		tempRGB = bitmapData[imageIdx];
-		bitmapData[imageIdx] = bitmapData[imageIdx + 2];
-		bitmapData[imageIdx + 2] = tempRGB;
-	}
-
-	filePtr = fopen(filename, "wb");
-	if (NULL == filePtr)
-	{
-		return FALSE;
-	}
-
-	fwrite(&bitmapFileHeader, sizeof(BITMAPFILEHEADER), 1, filePtr);
-
-	fwrite(&bitmapInfoHeader, sizeof(BITMAPINFOHEADER), 1, filePtr);
-
-	fwrite(bitmapData, bitmapInfoHeader.biSizeImage, 1, filePtr);
-
-	fclose(filePtr);
-	return TRUE;
+    //填充BITMAPFILEHEADER
+    myBITMAPFILEHEADER bitmapFileHeader;
+    memset(&bitmapFileHeader, 0, sizeof(myBITMAPFILEHEADER));
+    bitmapFileHeader.bfSize = sizeof(myBITMAPFILEHEADER)+ sizeof(myBITMAPINFOHEADER) + sizeof(bitmapData);
+    bitmapFileHeader.bfType = 0x4d42;    //BM
+    bitmapFileHeader.bfOffBits = sizeof(myBITMAPFILEHEADER) + sizeof(myBITMAPINFOHEADER);
+    
+    //填充BITMAPINFOHEADER
+    myBITMAPINFOHEADER bitmapInfoHeader;
+    memset(&bitmapInfoHeader, 0, sizeof(myBITMAPINFOHEADER));
+    bitmapInfoHeader.biSize = sizeof(myBITMAPINFOHEADER);
+    bitmapInfoHeader.biWidth = width;
+    bitmapInfoHeader.biHeight = height;
+    bitmapInfoHeader.biPlanes = 1;
+    bitmapInfoHeader.biBitCount = 24;
+    bitmapInfoHeader.biCompression = BI_RGB;
+    bitmapInfoHeader.biSizeImage = width * abs(height) * 3;
+    
+    //////////////////////////////////////////////////////////////////////////
+    FILE * filePtr;            //连接要保存的bitmap文件用
+    unsigned char tempRGB;    //临时色素
+    int imageIdx;
+    
+    //交换R、B的像素位置,bitmap的文件放置的是BGR,内存的是RGB
+    for (imageIdx = 0; imageIdx < bitmapInfoHeader.biSizeImage; imageIdx += 3)
+    {
+        tempRGB = bitmapData[imageIdx];
+        bitmapData[imageIdx] = bitmapData[imageIdx + 2];
+        bitmapData[imageIdx + 2] = tempRGB;
+    }
+    
+    filePtr = fopen(filename, "wb");
+    if (NULL == filePtr)
+    {
+        return false;
+    }
+    
+    fwrite(&bitmapFileHeader, sizeof(myBITMAPFILEHEADER), 1, filePtr);
+    
+    fwrite(&bitmapInfoHeader, sizeof(myBITMAPINFOHEADER), 1, filePtr);
+    
+    fwrite(bitmapData, bitmapInfoHeader.biSizeImage, 1, filePtr);
+    
+    fclose(filePtr);
+    return true;
 }
 
 void saveScreenShot(int clnHeight, int clnWidth, GLfloat angle)
 {
+    cout <<"save screen shot"<<endl;
 	//int clnHeight,clnWidth;	//client width and height
 	static void * screenData;
 	//  RECT rc;
@@ -230,24 +233,22 @@ void saveScreenShot(int clnHeight, int clnWidth, GLfloat angle)
 	screenData = malloc(len);
 	memset(screenData, 0, len);
 	glReadPixels(0, 0, clnWidth, clnHeight, GL_RGB, GL_UNSIGNED_BYTE, screenData);
-
-	/*int blackindex = (model_current)*view_num + angle / angle_interval + 1;
-	string blackbmpfilename = projection_path + "\\"
-	+ std::to_string(blackindex) + ".bmp";*/
+    
 	int view_current = angle / 30 + 1;
 
 	int blackindex = (model_current)*view_num + view_current + black_begin;
 
-	/*string projection_file = projection_path + "\\" +fz.files[model_current].name
-		+ "_"  + std::to_string(view_current) + ".bmp";*/
-
-	string projection_file = projection_path + "\\" + to_string((long double)blackindex) + ".bmp";
+	string projection_file = projection_path + "/" + to_string(blackindex) + ".bmp";
 
 	BmpImage* image = readbmp(projection_file);
 
 	Patch * mypatch = getpatch((unsigned char *)screenData, clnWidth, clnHeight);
 	HOGDescriptor *desc = new HOGDescriptor(cvSize(patch_size, patch_size), cvSize(16, 16), cvSize(8, 8), cvSize(8, 8), 9);
 	
+    cout << mypatch->x1 << " x1y1 " << mypatch->y1 << endl;
+    cout << image->width << " widhei " << image->height << endl;
+    cout << mypatch->x1*image->width << endl;
+    cout << (int)ceil(mypatch->x1*image->width) << endl;
 	//如果看得到被选中的区域
 	if (mypatch->x1 > -0.5)
 	{
@@ -274,16 +275,16 @@ void saveScreenShot(int clnHeight, int clnWidth, GLfloat angle)
 		//sprintf(seed_index, "%02d", (model->seed_current + 1));
 		//string index_seed(seed_index);
 
-		string patch_file = patch_path + "\\" + to_string((long double)view_current) + "\\" +
-			to_string((long double)model_current + 1 + model_begin) + "_" +
-			to_string((long double)model->seed_current + 1) + ".bmp";
+		string patch_file = patch_path + "/" + to_string(view_current) + "/" +
+			to_string(model_current + 1 + model_begin) + "_" +
+			to_string(model->seed_current + 1) + ".bmp";
 
 		//cout << "What the hell" << endl;
 		WriteBitmapFile(patch_file.data(), patch_size, patch_size, (unsigned char*)blackpatch->dataOfBmp);
 		
-		patch_file = patch_path + "\\" + to_string((long double)view_current) + "\\" +
-			to_string((long double)model_current + 1 + model_begin) + "_" +
-			to_string((long double)model->seed_current + 1) + ".txt";
+		patch_file = patch_path + "/" + to_string(view_current) + "/" +
+			to_string(model_current + 1 + model_begin) + "_" +
+			to_string(model->seed_current + 1) + ".txt";
 		
 		Mat M(patch_size, patch_size, CV_8UC3, (unsigned char*)blackpatch->dataOfBmp);
 
@@ -314,6 +315,7 @@ void saveScreenShot(int clnHeight, int clnWidth, GLfloat angle)
 	delete image;
 	delete mypatch;
 	free(screenData);
+    cout << "save screen done"<<endl;
 }
 
 void initialize(string params)
@@ -331,6 +333,7 @@ void initialize(string params)
 	if (ifs.fail())
 	{
 		cout << "can't open parameters file" << endl;
+        exit(0);
 	}
 	string tmp;
 	ifs >> tmp >> projection_path
@@ -347,20 +350,20 @@ void initialize(string params)
 
 	ifs.close();
 
-	if (_access(patch_path.c_str(), 0) == -1)
+	if (access(patch_path.c_str(), 0) == -1)
 	{
-		_mkdir(patch_path.data());
+		mkdir(patch_path.c_str(),0777);
 	}
-	if (_access(seed_path.c_str(), 0) == -1)
+	if (access(seed_path.c_str(), 0) == -1)
 	{
-		_mkdir(seed_path.data());
+		mkdir(seed_path.c_str(),0777);
 	}
 	for (int i = 1; i <= view_num; i++)
 	{
-		string temp = patch_path + "\\" + to_string((long double)i);
-		if (_access(temp.c_str(), 0) == -1)
+		string temp = patch_path + "/" + to_string(i);
+		if (access(temp.c_str(), 0) == -1)
 		{
-			_mkdir(temp.data());
+			mkdir(temp.c_str(),0777);
 		}
 
 	}
@@ -439,13 +442,14 @@ void reshape(int w, int h)
 void render()
 {
 	cout << "render" << endl;
+    cout << fz.files.size() << endl;
 	for (int k = 0; k < fz.files.size(); k++)
 	{
 		start = clock();
 		model = glmReadOBJ(const_cast<char *>(fz.files[model_current].path.c_str()));
-		int pos = fz.files[model_current].path.find_last_of('\\');
+		int pos = fz.files[model_current].path.find_last_of('/');
 		int length = fz.files[model_current].path.length();
-		string seed_filename = seed_path + "\\"+ fz.files[model_current].path.substr(pos + 1, length -5-pos) + ".off";
+		string seed_filename = seed_path + "/"+ fz.files[model_current].path.substr(pos + 1, length -5-pos) + ".off";
 		if (seed_exist)
 			read_seed(seed_filename);
 		else
@@ -455,7 +459,7 @@ void render()
 		{
 			for (GLfloat angle = 0; angle < 360; angle = angle + 30)
 			{
-
+                cout <<i << " angle " << angle << endl;
 				glPushMatrix();
 				glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 				//glRotatef((GLfloat)angle, 0, 1, 0);
@@ -532,7 +536,7 @@ void normalize()
 	{
 		start = clock();
 		model = glmReadOBJ(const_cast<char *>(fz.files[model_current].path.c_str()));
-		int pos = fz.files[model_current].path.find_last_of('\\');
+		int pos = fz.files[model_current].path.find_last_of('/');
 		int length = fz.files[model_current].path.length();
 		string file_name = fz.files[model_current].path.substr(pos + 1, length-1-pos);
 		char *temp = new char[length - 1 - pos +1];
@@ -551,7 +555,7 @@ void normalize()
 		temp[index] = '\0';
 		
 		remove(model->pathname);
-		string fix_filename = fz.files[model_current].path.substr(0, pos) +"\\" + temp;
+		string fix_filename = fz.files[model_current].path.substr(0, pos) +"/" + temp;
 
 		glmWriteOBJ(model, const_cast<char *>(fix_filename.c_str()), GLM_NONE);
 		

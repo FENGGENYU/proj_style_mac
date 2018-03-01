@@ -36,9 +36,9 @@ for iker=1:views
     load(vcurpath);
     load(ctcurpath);
     
-    patchPath=[kernel_Path,'\', num2str(iker),'\ceteridf\'];
+    patchPath=[kernel_Path,'/', num2str(iker),'/ceteridf'];
     patchName=importdata(fullfile(patchPath,'Apidfpatchname.txt'));
-    k2po=importdata([kernel_Path,'\', num2str(iker),'\k2po.txt']);
+    k2po=importdata([kernel_Path,'/', num2str(iker),'/k2po.txt']);
     Name{ikern,1}=[];
     
     nameT=[];

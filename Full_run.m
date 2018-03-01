@@ -8,7 +8,7 @@ feature_extraction = 0;
 if feature_extraction == 1
     %% data preparation
     tic;
-    %run_CT(views,models,sample_size,HOG_Path,patch_Path);
+    run_CT(views,models,sample_size,HOG_Path,patch_Path);
     run_cluster(views,K,HOG_Path,cluster_Path);
     run_cluster_idf(views,kernel_Path,HOG_Path,cluster_Path,patch_Path,models,sample_size,K);
     preCNN(views,txt_Path,imgname_Path,Nt);
