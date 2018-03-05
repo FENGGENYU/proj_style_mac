@@ -67,7 +67,7 @@ Patch* getpatch(unsigned char *bitmapData, int width, int height)
 }
 BmpImage* imcrop(BmpImage* image, int x, int y, int size)
 {
-    cout << "imcrop start" << endl;
+    //cout << "imcrop start" << endl;
 	if (x<1 || y<1 || x + size >image->width || y + size> image->height)
 	{
 		cout << "imcrop error" << endl;
@@ -75,14 +75,14 @@ BmpImage* imcrop(BmpImage* image, int x, int y, int size)
 	}
 	BmpImage* patch = new BmpImage;
 	patch->dataOfBmp = new myRGBQUAD[(size + 1)*(size + 1)];
-    cout << x << " xy " << y << endl;
+    //cout << x << " xy " << y << endl;
 	for (int i = y; i <= y + size; i++)
 		for (int j = x; j <= x + size; j++)
 			patch->dataOfBmp[(i - y)*(size + 1) + j - x] = image->dataOfBmp[(i - 1)*image->width + j - 1];
 	patch->height = size + 1;
 	patch->width = size + 1;
 	patch->depth = 24;
-    cout << "imcrop end"<< endl;
+    //cout << "imcrop end"<< endl;
 	return patch;
 }
 BmpImage* readbmp(string Filename)

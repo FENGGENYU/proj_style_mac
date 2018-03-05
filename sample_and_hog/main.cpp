@@ -167,8 +167,6 @@ void writeSeeds(string seed_filename)
 	ofile.close();
 }
 
-
-
 void del()
 {
 	delete[] model;
